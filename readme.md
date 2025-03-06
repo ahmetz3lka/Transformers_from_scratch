@@ -20,7 +20,7 @@ This repository contains my implementation of Transformers from scratch, inspire
 To run the implementation, clone this repository and install the required dependencies:
 
 ```bash
-git clone https://github.com/yourusername/transformers-from-scratch.git
+git clone https://github.com/ahmetz3lka/transformers_from_scratch.git
 cd transformers-from-scratch
 pip install -r requirements.txt
 ```
