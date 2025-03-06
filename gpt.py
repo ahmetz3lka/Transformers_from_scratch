@@ -117,21 +117,7 @@ class FeedForward(nn.Module):
         return self.net(x)
 
 
-class Block(nn.Module):
-    def __init__(self, n_embd, n_head):
-        super().__init__()
-        head_size = n_embd // n_head
-        self.sa = MultiHeadAttention(n_head, head_size)
-        self.ffwd = FeedForward(n_embd)
-        self.ln1 = nn.LayerNorm(n_embd)
-        self.ln2 = nn.LayerNorm(n_embd)
-
-    def forward(self, x):
-        x = x + self.sa(self.ln1(x))
-        x = x + self.ffwd(self.ln2(x))
-        return x
-
-
+# We are building decoder only model, so this is kinda optinal to add GptLanguageModel
 class EncoderBlock(nn.Module):
     """A single encoder block with unmasked self-attention"""
 
@@ -151,6 +137,21 @@ class EncoderBlock(nn.Module):
         return x
 
 
+class DecoderBlock(nn.Module):
+    def __init__(self, n_embd, n_head):
+        super().__init__()
+        head_size = n_embd // n_head
+        self.sa = MultiHeadAttention(n_head, head_size)
+        self.ffwd = FeedForward(n_embd)
+        self.ln1 = nn.LayerNorm(n_embd)
+        self.ln2 = nn.LayerNorm(n_embd)
+
+    def forward(self, x):
+        x = x + self.sa(self.ln1(x))
+        x = x + self.ffwd(self.ln2(x))
+        return x
+
+
 class GptLanguageModel(nn.Module):
     def __init__(self):
         super().__init__()
@@ -159,7 +160,9 @@ class GptLanguageModel(nn.Module):
             block_size, n_embd
         )  # each position also gets an embedding vector
         self.blocks = nn.Sequential(
-            *[Block(n_embd, n_head=n_head) for _ in range(n_layer)],  # 4 blocks
+            *[
+                DecoderBlock(n_embd, n_head=n_head) for _ in range(n_layer)
+            ],  # n_layer blocks
         )
         self.ln_f = nn.LayerNorm(n_embd)  # final layer norm
         self.lm_head = nn.Linear(n_embd, vocab_size)
@@ -202,7 +205,7 @@ class GptLanguageModel(nn.Module):
         return idx
 
 
-model = BigramLanguageModel()
+model = GptLanguageModel()
 m = model.to(device)
 
 print(sum(p.numel() for p in m.parameters()) / 1e6, "M parameters")
